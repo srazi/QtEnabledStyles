@@ -1,0 +1,48 @@
+version: 0.1.{build}-{branch}
+
+configuration:
+  - release
+
+image:
+    - Visual Studio 2015
+
+environment:
+  global:
+    VSVER: 14
+    ARCH: x86
+    QMAKESPEC: win32-msvc
+    MAKETOOL: jom
+    TOOLSDIR: C:\Qt\Tools\QtCreator
+
+  matrix:
+    - QTDIR: C:\Qt\5.10.0\msvc2015
+    - ARCH: x64
+      QTDIR: C:\Qt\5.10.0\msvc2015_64
+    - QTDIR: C:\Qt\5.9.3\msvc2015
+
+install:
+  - call "C:\Program Files (x86)\Microsoft Visual Studio "%VSVER%".0\VC\vcvarsall.bat" %ARCH%
+  - set PATH=%QTDIR%\bin;%TOOLSDIR%\bin;%CD%\bin;%PATH%
+
+build_script:
+  - qmake -v
+  - qmake QtEnabledStyles.pro
+  - call %MAKETOOL%
+
+test_script:
+  - echo %CD%
+  - dir
+  - dir release\
+  - release\QtEnabledStyles.exe > styles.txt
+  - dir
+  - dir release\
+  - cat styles.txt
+  - cat release\styles.txt
+
+# remote desktop connection on init
+init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+# remote desktop connection on finish and block build to not destroy VM
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
